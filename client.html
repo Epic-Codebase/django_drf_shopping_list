@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Awesome Shopping App</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <style>
+      .strikethrough {
+        text-decoration: line-through;
+      }
+      .clickable {
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div class="container m-auto mt-4" style="max-width: 700px">
+        <ul class="nav nav-tabs">
+          <li
+            class="nav-item"
+            v-for="(shopping_list, index) in all_shopping_lists"
+            :key="'nav_' + shopping_list.id"
+          >
+            <a
+              class="nav-link"
+              data-bs-toggle="tab"
+              :href="'#content_' + shopping_list.id"
+              :class="{ active: index === 0 }"
+            >
+              {{shopping_list.name}}
+            </a>
+          </li>
+        </ul>
+        <div class="tab-content mt-4">
+          <div
+            :id="'content_' + shopping_list.id"
+            :class="{ active: index === 0, show: index === 0 }"
+            v-for="(shopping_list, index) in all_shopping_lists"
+            :key="'content_' + shopping_list.id"
+            class="tab-pane fade in"
+          >
+            <ul class="list-group">
+              <li
+                class="clickable list-group-item"
+                v-for="shopping_item in shopping_list.shopping_items"
+                :key="shopping_item.id"
+                :class="{strikethrough: shopping_item.purchased}"
+                @click.prevent="toggleShoppingItemStatus(shopping_list.id, shopping_item)"
+              >
+                {{shopping_item.name}}
+              </li>
+            </ul>
+            <div>
+              <form @submit.prevent="addShoppingItem(shopping_list, new_shopping_item)">
+                <input
+                  type="text"
+                  v-model="new_shopping_item"
+                  placeholder="Add a new item"
+                  class="list-group-item p-2"
+                  style="width: 100%"
+                >
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      const { createApp } = Vue;
+      createApp({
+        data() {
+          return {
+            all_shopping_lists: [],
+            new_shopping_item: "",
+          };
+        },
+        methods: {
+          addShoppingItem(shopping_list, new_shopping_item) {
+            if (new_shopping_item.length < 1) return;
+
+            const postData = { name: new_shopping_item, purchased: false };
+            const postUrl =
+              "http://127.0.0.1:8000/api/shopping-lists/" +
+              shopping_list.id +
+              "/shopping-items/";
+
+            axios.post(postUrl, postData).then(
+              (res) => {
+                this.all_shopping_lists
+                  .find((x) => x.id === shopping_list.id)
+                  .shopping_items.push({
+                    name: new_shopping_item,
+                    purchased: false,
+                    id: res.data.id,
+                  });
+                this.new_shopping_item = "";
+              },
+              (res) => {
+                console.log("Connection unavailable at the moment", res);
+              }
+            );
+          },
+          toggleShoppingItemStatus(shopping_list_id, shopping_item) {
+            const url =
+              "http://127.0.0.1:8000/api/shopping-lists/" +
+              shopping_list_id +
+              "/shopping-items/" +
+              shopping_item.id +
+              "/";
+            const postData = { purchased: !shopping_item.purchased };
+            axios.patch(url, postData).then(
+              () => {
+                shopping_item.purchased = !shopping_item.purchased;
+              },
+              (res) => {
+                console.log("Connection unavailable at the moment", res.errors);
+              }
+            );
+          },
+        },
+        mounted() {
+          axios.get("http://127.0.0.1:8000/api/shopping-lists/").then((response) => {
+            this.all_shopping_lists = response.data;
+          });
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>

@@ -1,0 +1,25 @@
+version: '3.9'
+
+services:
+
+  shopping_list_db:
+    image: postgres:16-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=shopping_user
+      - POSTGRES_PASSWORD=shopping_password
+      - POSTGRES_DB=shopping_db
+
+  shopping_list:
+    build: .
+    command: gunicorn core.wsgi:application --bind 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://shopping_user:shopping_password@shopping_list_db:5432/shopping_db
+    depends_on:
+      - shopping_list_db
+
+volumes:
+  postgres_data:

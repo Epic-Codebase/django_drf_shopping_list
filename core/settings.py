@@ -35,8 +35,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get("SECRET_KEY", default=get_random_secret_key())
 DEBUG = int(os.environ.get("DEBUG", default=0))
-ALLOWED_HOSTS = os.environ.get("RENDER_EXTERNAL_HOSTNAME", default="127.0.0.1 [::1]").split()
-CSRF_TRUSTED_ORIGINS = [os.environ.get("RENDER_EXTERNAL_URL")]
+ALLOWED_HOSTS = os.environ.get(
+    "DJANGO_ALLOWED_HOSTS", default="127.0.0.1 localhost [::1]"
+).split(" ")
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
